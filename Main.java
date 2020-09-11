@@ -9,9 +9,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import com.google.gson.JsonObject;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 /**
  * Made to fulfill the requirements specified in the Coding Challenge
@@ -61,14 +60,16 @@ public class Main {
 			throws IOException {
 
 		// Create new JSON Object containing our data to POST
-		JsonObject myJSON = new JsonObject();
-		myJSON.addProperty("id", id);
-		myJSON.addProperty("name", name);
-		myJSON.addProperty("average", average);
-		// Making the ArrayList to a string so it can be added to myJSON
-		Gson gsonBuilder = new GsonBuilder().create();
-		String jsonFromJavaArrayList = gsonBuilder.toJson(studentIds);
-		myJSON.addProperty("studentIds", jsonFromJavaArrayList);
+		JSONObject myJSON = new JSONObject();
+		myJSON.put("id", id);
+		myJSON.put("name", name);
+		myJSON.put("average", average);
+		// Making JSONArray for the studentIds so it can be added to myJSON
+		JSONArray jsonStudentIds = new JSONArray();
+		for (int i = 0; i < studentIds.size(); i++) {
+			jsonStudentIds.put(studentIds.get(i));
+		}
+		myJSON.put("studentIds", jsonStudentIds);
 
 		// POST myJSON to "/challenge"
 		URL url = new URL("/challenge");
