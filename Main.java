@@ -22,44 +22,29 @@ public class Main {
 
 	public static void main(String[] args) throws IOException {
 
-		// Create a HashMap to store the student data. The key is their ID #, the value
-		// is a Student object
-		HashMap<Integer, Student> myStudents = XLSXReader.importStudentData();
+		// Stores the student data as studentCollection. The key is their ID #, the value is a Student object
+		HashMap<Integer, Student> studentCollection = XLSXReader.importStudentData();
+		
+		XLSXReader.importTestScores(studentCollection, true, "data\\Test Scores.xlsx");// Setting the original test scores for each student
+		
+		XLSXReader.importTestScores(studentCollection, false, "data\\Test Retake Scores.xlsx");// Setting the re-take scores for students who took it
 
-		// Setting the original test scores for each student
-		XLSXReader.importTestScores(myStudents, true, "data\\Test Scores.xlsx");
+		int testScoreAverage = getAverageTestScore(studentCollection);
+		
+		ArrayList<String> femaleCSStudentIDs = getFemaleCSStudentIDs(studentCollection);
 
-		// Setting the re-take scores for students who took it
-		XLSXReader.importTestScores(myStudents, false, "data\\Test Retake Scores.xlsx");
+		JSONObject jsonToPOST = createJSON("adambadagliacco@gmail.com", "Adam Badagliacco", (int) testScoreAverage, femaleCSStudentIDs);
+		
+		postJSONtoURL(jsonToPOST, new URL("/challenge"));
 
-		// Get the test average saved to testAverage
-		double numberOfTests = myStudents.size();
-		double testTotal = 0;
-		for (Student i : myStudents.values()) {
-			testTotal += i.getFinalScore();
-		}
-		double testAverage = testTotal / numberOfTests;
-
-		// Create an Array for all the female students majoring in computer science
-		ArrayList<String> femaleCS = new ArrayList<String>();
-		// Add in all females in CS
-		for (Student i : myStudents.values()) {
-			if (i.getMajor().equals("computer science") && i.getGender() == 'F') {
-				femaleCS.add(i.getId());
-			}
-		}
-		// Put in order based on ID
-		Collections.sort(femaleCS);
-
-		// Sends a POST request to "/challenge" with the JSON data specified in the
-		// coding challenge instructions
-		postRequest("adambadagliacco@gmail.com", "Adam Badagliacco", (int) testAverage, femaleCS);
 	}
 
-	public static void postRequest(String id, String name, int average, ArrayList<String> studentIds)
-			throws IOException {
+	/**
+	 * Creates and returns a JSON of the data specified from the coding test
+	 * instructions
+	 */
+	public static JSONObject createJSON(String id, String name, int average, ArrayList<String> studentIds) throws IOException {
 
-		// Create new JSON Object containing our data to POST
 		JSONObject myJSON = new JSONObject();
 		myJSON.put("id", id);
 		myJSON.put("name", name);
@@ -71,22 +56,54 @@ public class Main {
 		}
 		myJSON.put("studentIds", jsonStudentIds);
 
-		// POST myJSON to "/challenge"
-		URL url = new URL("/challenge");
-		URLConnection con = url.openConnection();
+		return myJSON;
+	}
+
+	/**
+	 * Sends the myJSONtoPOST as a POST request to urlToPostAt
+	 */
+	public static void postJSONtoURL(JSONObject myJSONtoPOST, URL urlToPostAt) throws IOException {
+
+		URLConnection con = urlToPostAt.openConnection();
 		HttpURLConnection http = (HttpURLConnection) con;
 		http.setRequestMethod("POST");
 		http.setDoOutput(true);
 
-		byte[] out = myJSON.toString().getBytes(StandardCharsets.UTF_8);
-		int length = out.length;
+		byte[] jsonAsByteStream = myJSONtoPOST.toString().getBytes(StandardCharsets.UTF_8);
+		int length = jsonAsByteStream.length;
 
 		http.setFixedLengthStreamingMode(length);
 		http.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
 		http.connect();
 		try (OutputStream os = http.getOutputStream()) {
-			os.write(out);
+			os.write(jsonAsByteStream);
 		}
+	}
 
+	public static ArrayList<String> getFemaleCSStudentIDs(HashMap<Integer, Student> studentCollection) {
+
+		ArrayList<String> femaleCSStudentIDs = new ArrayList<String>();
+
+		// Add in all females in CS from our studentCollection
+		for (Student i : studentCollection.values()) {
+			if (i.getMajor().equals("computer science") && i.getGender() == 'F') {
+				femaleCSStudentIDs.add(i.getId());
+			}
+		}
+		// Put in order based on ID
+		Collections.sort(femaleCSStudentIDs);
+
+		return femaleCSStudentIDs;
+	}
+
+	public static int getAverageTestScore(HashMap<Integer, Student> studentsToGetScoresFrom) {
+
+		double totalNumberOfTests = studentsToGetScoresFrom.size();
+		double sumOfTestScores = 0;
+		for (Student eachStudent : studentsToGetScoresFrom.values()) {
+			sumOfTestScores += eachStudent.getFinalScore();
+		}
+		double testAverage = sumOfTestScores / totalNumberOfTests;
+		return (int) testAverage;
 	}
 }
