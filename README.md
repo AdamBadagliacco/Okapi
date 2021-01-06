@@ -1,5 +1,4 @@
 # Okapi
-Created as part of a coding challenge.
+Created as part of a coding challenge. Reads in student and test data from Excel and sends specified information as a POST request to a URL. 
 
-(For your convenience I have included the three java files and POM file only since they were the files I created/altered for project. If you would prefer the entire build path let me know, and I will alter the repository accordingly.)
-
+For convenience I have included the three java files and POM file only since they were the files I created/altered for project. 
